@@ -3,33 +3,22 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Models\Event;
-//Route::get('/', function () {
-  //  return view('welcome');
-//});
-
-/*Route::get('/', function (Illuminate\Http\Request $request) {
-    $search = $request->query('search');
-    return view('welcome', ['search' => $search]);
-});*/
+use App\Http\Controllers\EventParticipationController;
+use App\Http\Controllers\DashboardController;
+Route::post('/events/join/{event}', [EventParticipationController::class, 'join'])
+    ->middleware('auth')
+    ->name('events.join');
+Route::delete('/events/{event}/leave', [EventParticipationController::class, 'leave'])
+    ->middleware('auth')
+    ->name('events.leave');
 Route::get('/', [EventController::class, 'index']);
-
-
 Route::get('/contact', [ContactController::class, 'contact'])
 ->name('contact');
-
-
-
-
 Route::resource('events', EventController::class)
     ->middleware('auth');
-
-
-Route::get('/dashboard', [EventController::class, 'dashboard'])
+Route::get('/dashboard', [DashboardController::class, 'dashboard'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
-
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
     ->name('profile.edit');
@@ -37,8 +26,5 @@ Route::middleware('auth')->group(function () {
     ->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])
     ->name('profile.destroy');
-
 });
-
-
 require __DIR__.'/auth.php';

@@ -28,7 +28,8 @@
                                 <form action="/events/{{ $event->id }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</button>
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</button>
                                 </form>
                             </td>
                         </tr>
@@ -50,20 +51,26 @@
                     <div class="col-md-4 mb-4">
                         <div class="card">
                             @if($event->image)
-                                <img src="{{ asset('storage/events/' . $event->image) }}" class="card-img-top" alt="{{ $event->title }}">
+                                <img src="{{ asset('storage/events/' . $event->image) }}" class="card-img-top"
+                                    alt="{{ $event->title }}">
                             @else
                                 <img src="/img/event_default.jpg" class="card-img-top" alt="Sem imagem">
                             @endif
                             <div class="card-body">
                                 <h5 class="card-title">{{ $event->title }}</h5>
-                                <p class="card-text">{{ $event->city }} - {{ \Carbon\Carbon::parse($event->date)->format('d/m/Y') }}</p>
-                                <p>{{ $event->users->count() }} participantes</p>
+                                <p class="card-text">{{ $event->city }} - {{ \Carbon\Carbon::parse($event->date)->format('d/m/Y') }}
+                                </p>
+                                <p>{{ $event->participants->count() }} participantes</p>
                                 <a href="/events/{{ $event->id }}" class="btn btn-primary">Ver evento</a>
-                                <form action="/events/{{ $event->id }}/leave" method="POST" style="display:inline;">
+
+                                <form action="{{ route('events.leave', $event->id) }}" method="POST" style="display:inline;">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-sm">Sair</button>
                                 </form>
+                                
+
+
                             </div>
                         </div>
                     </div>
@@ -74,6 +81,3 @@
         @endif
     </div>
 @endsection
-
-
-

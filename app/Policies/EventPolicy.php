@@ -48,11 +48,16 @@ class EventPolicy
     /**
      * Apenas o dono do evento pode deletar
      */
-    public function delete(User $user, Event $event): bool
+    public function leave(User $user, Event $event): bool
+{
+    return $user->participatedEvents()
+        ->where('events.id', $event->id)
+        ->exists();
+}
+ public function delete(User $user, Event $event): bool
     {
         return $user->id === $event->user_id;
     }
-
 
 }
 

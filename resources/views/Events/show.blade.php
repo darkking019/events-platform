@@ -32,7 +32,8 @@
 
 
             {{-- Confirmar presença --}}
-            @if(!$hasUserJoined)
+           @if(!($hasParticipantJoined ?? false))
+
                 <form action="/events/join/{{ $event->id }}" method="POST">
                     @csrf
                     <button type="submit" class="btn btn-primary" id="event-submit">
