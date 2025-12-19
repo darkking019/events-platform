@@ -1,5 +1,5 @@
 <?php
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,21 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->api(prepend: [
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        ]);
-
-        $middleware->alias([
-            'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
-        ]);
-
-        //
-    })
+    $middleware->statefulApi();
+    $middleware->validateCsrfTokens(except: ['api/*']); // ← desativa CSRF só para rotas API
+    $middleware->alias([
+        'auth' => \App\Http\Middleware\Authenticate::class,
+        'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+    ]);
+})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })
     ->create();
- 
-       
     
     

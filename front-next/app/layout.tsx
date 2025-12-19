@@ -44,7 +44,7 @@ export default async function RootLayout({
               {/* Menu principal */}
               <ul className="hidden md:flex items-center space-x-8">
                 <li>
-                  <Link href="/events" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                  <Link href="/events/event" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
                     Eventos
                   </Link>
                 </li>

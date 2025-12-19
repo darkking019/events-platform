@@ -1,29 +1,17 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Api\LoginController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EventController;
+Route::post('/login', [LoginController::class, 'store']);
 
-Route::post('/login', function (Request $request) {
-    $credentials = $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
 
-    if (!Auth::attempt($credentials)) {
-        return response()->json([
-            'message' => 'Credenciais inválidas',
-        ], 422);
-    }
-
-    $request->session()->regenerate();
-
-    return response()->json([
-        'message' => 'Logado com sucesso',
-        'user' => $request->user(),
-    ]);
+Route::middleware('auth:sanctum')->get('/user', function () {
+    return auth()->user();
 });
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/my-events', [EventController::class, 'index']);
+    Route::post('/events', [EventController::class, 'store']);
 });

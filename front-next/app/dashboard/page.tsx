@@ -1,85 +1,86 @@
-// app/dashboard/page.tsx
-import { createSupabaseServer } from '../lib/supabase/server';
-import { redirect } from 'next/navigation';
-import DashboardTitle from '../components/DashboardTitle';
-import EventsTable from '../components/EventsTable';
-import EmptyState from '../components/EmptyState';
+"use client";
 
-export default async function DashboardPage() {
-  const supabase = await createSupabaseServer();
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-  const { data: { user } } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!user) {
-    redirect('/login');
+  useEffect(() => {
+    async function load() {
+      try {
+        const userRes = await fetch("http://localhost:8000/api/user", {
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        });
+
+        if (!userRes.ok) throw new Error("401");
+
+        const userData = await userRes.json();
+        setUser(userData);
+
+        const eventsRes = await fetch("http://localhost:8000/api/my-events", {
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        });
+
+        if (eventsRes.ok) {
+          setEvents(await eventsRes.json());
+        }
+      } catch {
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [router]);
+
+  async function logout() {
+    await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+      credentials: "include",
+    });
+
+    await fetch("http://localhost:8000/api/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    router.push("/login");
   }
 
-  // 1. Eventos criados pelo usuário
-  const { data: createdEvents } = await supabase
-    .from('events')
-    .select('id, title, user_id')
-    .eq('user_id', user.id);
+  if (loading) return <p>Carregando...</p>;
 
-  // 2. IDs dos eventos que o usuário participa
-  const { data: participantIds } = await supabase
-    .from('participants')
-    .select('event_id')
-    .eq('user_id', user.id);
-
-  const participatedEventIds = participantIds?.map((p: any) => p.event_id) || [];
-
-  // 3. Busca os eventos participados
-  let participatedEvents: any[] = [];
-  if (participatedEventIds.length > 0) {
-    const { data } = await supabase
-      .from('events')
-      .select('id, title, user_id')
-      .in('id', participatedEventIds);
-    participatedEvents = data || [];
-  }
-
-  // 4. Junta criados + participados
-  const allEvents = [...(createdEvents || []), ...participatedEvents];
-
-  // 5. Remove duplicados (caso o usuário crie e participe do mesmo evento)
-  const uniqueEvents = allEvents.filter(
-    (event, index, self) => index === self.findIndex((e) => e.id === event.id)
-  );
-
-  // 6. Adiciona contagem de participantes e se é dono
-  const eventsWithParticipants = await Promise.all(
-    uniqueEvents.map(async (event) => {
-      const { count } = await supabase
-        .from('participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', event.id);
-
-      return {
-        id: event.id,
-        title: event.title,
-        participantCount: count || 0,
-        isOwner: event.user_id === user.id,
-      };
-    })
-  );
-
-  // Agora sim, usa a variável que foi criada acima
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <DashboardTitle>Meus eventos</DashboardTitle>
+      <div className="flex justify-between mb-8">
+        <h1 className="text-4xl font-bold">Meus eventos</h1>
+        <button
+          onClick={logout}
+          className="px-6 py-3 bg-red-600 text-white rounded-lg"
+        >
+          Sair
+        </button>
+      </div>
 
-      <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
-        Aqui estão os eventos que você criou ou está participando:
+      <p className="mb-6">
+        Bem-vindo, <strong>{user.name}</strong>
       </p>
 
-      {eventsWithParticipants.length > 0 ? (
-        <EventsTable events={eventsWithParticipants} />
+      {events.length ? (
+        <div className="grid gap-6 md:grid-cols-3">
+          {events.map((event) => (
+            <div key={event.id} className="border p-4 rounded">
+              <h3 className="font-bold">{event.title}</h3>
+            </div>
+          ))}
+        </div>
       ) : (
-        <EmptyState
-          message="Você não tem eventos."
-          linkText="Criar evento"
-          linkHref="/events/create"
-        />
+        <p>Você não tem eventos ainda.</p>
       )}
     </div>
   );

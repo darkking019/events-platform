@@ -1,90 +1,184 @@
-import Link from 'next/link';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+import Input from "@/app/components/ui/input";
+import Button from "@/app/components/ui/Button";
+
+/**
+ * Lê cookie pelo nome
+ */
+function getCookie(name: string): string | undefined {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+}
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      /**
+       * 1️⃣ Pede o cookie CSRF do Sanctum
+       */
+      const csrfRes = await fetch(
+        "http://localhost:8000/sanctum/csrf-cookie",
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!csrfRes.ok) {
+        throw new Error("Falha ao obter cookie CSRF");
+      }
+
+      const xsrfToken = getCookie("XSRF-TOKEN");
+      if (!xsrfToken) {
+        throw new Error("Token XSRF não encontrado");
+      }
+
+      /**
+       * 2️⃣ Dados do formulário
+       */
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      const email = String(formData.get("email") || "").trim();
+      const password = String(formData.get("password") || "");
+
+      if (!email || !password) {
+        setError("Preencha email e senha");
+        setLoading(false);
+        return;
+      }
+
+      /**
+       * 3️⃣ LOGIN REAL (ROTA CORRETA)
+       * 🔥 /login (NÃO /api/login)
+       */
+      const loginRes = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!loginRes.ok) {
+        const data = await loginRes.json().catch(() => ({}));
+        setError(
+          data.errors?.email?.[0] ||
+            data.message ||
+            "Email ou senha inválidos"
+        );
+        setLoading(false);
+        return;
+      }
+
+      /**
+       * 4️⃣ Login OK
+       */
+      const loginData = await loginRes.json();
+      console.log("Login sucesso:", loginData);
+
+      /**
+       * 5️⃣ Confirma sessão (opcional, mas recomendado)
+       */
+      const meRes = await fetch("http://localhost:8000/api/user", {
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        console.log("Usuário autenticado:", meData);
+      }
+
+      /**
+       * 6️⃣ Redireciona
+       */
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      console.error("Erro no login:", err);
+      setError(
+        "Erro de conexão com o servidor. Verifique se o backend está rodando."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Entre na sua conta
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Ou{' '}
-            <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-              crie uma nova conta
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <section className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Entrar na conta
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Ou{" "}
+            <Link
+              href="/register"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              crie uma conta nova
             </Link>
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" action="/api/auth/login" method="POST">
-          {/* Aqui você pode usar Server Actions no futuro, mas por enquanto um form simples pra API route */}
-
-          <div className="rounded-md shadow-sm space-y-4">
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                placeholder="seu@email.com"
-              />
-            </div>
-
-            {/* Senha */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Senha
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-800"
-                placeholder="••••••••"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          <div className="space-y-4">
+            <Input
+              name="email"
+              type="email"
+              placeholder="seu@email.com"
+              required
+              autoComplete="email"
+              className="w-full"
+            />
+            <Input
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+              className="w-full"
+            />
           </div>
 
-          <div className="flex items-center justify-between">
-            {/* Remember me */}
-            <div className="flex items-center">
-              <input
-                id="remember"
-                name="remember"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-700"
-              />
-              <label htmlFor="remember" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                Lembrar-me
-              </label>
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <p className="text-sm text-red-800 text-center">
+                {error}
+              </p>
             </div>
+          )}
 
-            {/* Esqueci senha */}
-            <div className="text-sm">
-              <Link href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Esqueceu a senha?
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Entrar
-            </button>
-          </div>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4"
+          >
+            {loading ? "Entrando..." : "Entrar"}
+          </Button>
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
+
