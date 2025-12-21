@@ -1,72 +1,112 @@
-# Plataforma de Gestão de Eventos
+Plataforma de Gestão de Eventos
 
 Aplicação full stack para gerenciamento de eventos, desenvolvida com foco em arquitetura limpa, escalabilidade e boas práticas de backend e frontend.
 
-## 🚀 Visão Geral
-Sistema completo que permite a criação, gerenciamento e participação em eventos, com autenticação segura, controle de acesso e integração entre frontend e backend.
+Projeto construído do zero como aplicação real, simulando um ambiente de produção e fluxos comuns do mercado.
 
-Projeto desenvolvido do zero como aplicação real, simulando um ambiente de produção.
+🚀 Visão Geral
 
-## 🛠️ Stack Utilizada
+Sistema que permite a criação, gerenciamento e participação em eventos, com autenticação segura, controle de acesso e comunicação eficiente entre frontend e backend via API REST.
 
-### Backend
-- Laravel
-- API REST
-- Autenticação
-- Policies & Gates
-- Services (camada de negócio)
-- Migrations e Seeders
+O projeto prioriza organização de código, separação de responsabilidades e testabilidade, servindo também como estudo prático de padrões profissionais.
 
-### Frontend
-- Next.js
-- App Router
-- Integração com API REST
-- Componentes Client/Server
+🛠️ Stack Utilizada
+Backend
 
-### Banco de Dados
-- MySQL (ou PostgreSQL, se for o caso)
+Laravel
 
-## 🧱 Arquitetura
-- Separação de responsabilidades
-- Camada de Services para regras de negócio
-- Controllers enxutos
-- Código organizado e testável
+API REST
 
-## 🔐 Funcionalidades
-- Cadastro e autenticação de usuários
-- Criação e gerenciamento de eventos
-- Controle de acesso baseado em permissões
-- Participação em eventos
-- Integração frontend/backend
+Autenticação (Laravel Fortify)
 
-## 📸 Screenshots
-> Em breve
+Policies & Gates (controle de acesso)
 
-## ⚙️ Como executar o projeto
+Camada de Services para regras de negócio
 
-### Backend
-```bash
+Migrações e Seeders
+
+Frontend
+
+Next.js (App Router)
+
+Componentes Client & Server
+
+Integração com API REST
+
+Páginas protegidas por autenticação
+
+Banco de Dados
+
+MySQL
+(pode ser adaptado para PostgreSQL)
+
+🧱 Arquitetura
+
+Separação clara de responsabilidades
+
+Controllers enxutos
+
+Regras de negócio centralizadas em Services
+
+Uso de Policies para autorização
+
+Código organizado, legível e preparado para testes
+
+🔐 Funcionalidades
+
+Cadastro e autenticação de usuários
+
+Criação e gerenciamento de eventos
+
+Controle de acesso baseado em permissões
+
+Participação em eventos
+
+Integração completa entre frontend e backend
+
+📸 Capturas de Tela
+
+🚧 Em breve
+
+⚙️ Como Executar o Projeto
+Backend (Laravel)
 composer install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed
 php artisan serve
+
+Frontend (Next.js)
 npm install
 npm run dev
+
 🧪 Testes
-Testes automatizados estão em desenvolvimento.
+
+Testes automatizados estão em desenvolvimento, com foco em:
+
+Services
+
+Regras de autorização
+
+Fluxos críticos da aplicação
 
 🔄 CI/CD
-Pipeline de CI será configurado em breve com GitHub Actions.
+
+Pipeline de CI será configurado em breve utilizando GitHub Actions, incluindo:
+
+Execução de testes
+
+Validação de build
+
+Padronização de código
 
 📌 Status do Projeto
-🚧 Em desenvolvimento
+
+🚧 Em desenvolvimento ativo
 
 👨‍💻 Autor
+
 Jonathan Henrique
 Full Stack Developer — Laravel & Next.js
-LinkedIn: https://linkedin.com/in/jonathanhenrique
 
-
-
-
+🔗 LinkedIn: https://linkedin.com/in/jonathanhenrique
