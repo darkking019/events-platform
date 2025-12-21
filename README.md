@@ -67,6 +67,6 @@ Jonathan Henrique
 Full Stack Developer — Laravel & Next.js
 LinkedIn: https://linkedin.com/in/jonathanhenrique
 
-yaml
-Copiar código
+
+
 
