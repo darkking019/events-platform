@@ -33,7 +33,7 @@ class MercadoPagoController extends Controller
         $client = new PreferenceClient();
 
         // V0 SIMPLES, ESTÁVEL E ACEITO PELO MP
-        $frontendUrl = config('services.frontend.url'); // evita usar env() direto
+       $publicUrl = 'https://vapouringly-intercorporate-chace.ngrok-free.dev';
 
         $preference = [
             'items' => [
@@ -44,12 +44,13 @@ class MercadoPagoController extends Controller
                     'currency_id' => 'BRL',
                 ]
             ],
+'back_urls' => [
+        'success' => $publicUrl . '/events/create?payment=success',
+        'failure' => $publicUrl . '/events/create?payment=failure',
+        'pending' => $publicUrl . '/events/create?payment=pending',
+    ],
 
-            'back_urls' => [
-                'success' => $frontendUrl . '/pagamento/sucesso',
-                'failure' => $frontendUrl . '/pagamento/erro',
-                'pending' => $frontendUrl . '/pagamento/pendente',
-            ],
+
 
             'notification_url' => config('app.url') . '/api/mercado-pago/webhook',
 

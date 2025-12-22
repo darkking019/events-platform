@@ -82,7 +82,7 @@ class EventController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $event,
+            'data' => $event->append('image_url'),
             'has_joined' => $hasJoined
         ]);
     }

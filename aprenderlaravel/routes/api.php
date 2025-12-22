@@ -13,6 +13,7 @@ use App\Http\Controllers\MercadoPagoController;
 |--------------------------------------------------------------------------
 */
 
+
 // Login
 Route::post('/login', [LoginController::class, 'store']);
 
@@ -36,6 +37,7 @@ Route::post(
 | Rotas protegidas (Sanctum)
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth:sanctum')->group(function () {
 
     // Usuário autenticado

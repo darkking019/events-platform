@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -65,6 +66,11 @@ class Event extends Model
             $q->where('title', 'like', "%{$search}%")
               ->orWhere('city', 'like', "%{$search}%");
         });
+    }
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? Storage::url($this->image) : null;
+        // Ou: Storage::disk('public')->url($this->image);
     }
 }
 

@@ -15,13 +15,20 @@ class PendingEvent extends Model
     protected $fillable = [
         'user_id',
         'data',
-        'temp_image_path',
+        'temp_image_path', 'external_reference',
+        'payment_id',
+        'status',
+        'amount',
+        'mp_payload',
     ];
 
     /**
      * Casts automáticos
      */
+
+
     protected $casts = [
+        'mp_payload' => 'array',
         'data' => 'array',
     ];
 
