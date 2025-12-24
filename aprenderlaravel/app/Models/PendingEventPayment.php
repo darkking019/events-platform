@@ -5,7 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class PendingEvent extends Model
+class PendingEventPayment extends Model
+
+
+
+
 {
     use HasFactory;
 

@@ -1,23 +1,20 @@
+// app/login/page.tsx  (ou o caminho que você usa para a página de login)
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth} from 'app/context/AuthContext'
 
-import Input from "@/app/components/ui/input";
-import Button from "@/app/components/ui/Button";
+import Input from "app/components/ui/input";       // ajuste o caminho se necessário
+import Button from "app/components/ui/Button";     // ajuste o caminho se necessário
 
-/**
- * Lê cookie pelo nome
- */
-function getCookie(name: string): string | undefined {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth(); // Pega a função login do contexto
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,74 +24,44 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1️⃣ Pega cookie CSRF do Laravel Sanctum
-      const csrfRes = await fetch("http://localhost:8000/sanctum/csrf-cookie", {
-        credentials: "include",
-      });
+      const formData = new FormData(e.currentTarget);
 
-      if (!csrfRes.ok) throw new Error("Falha ao obter cookie CSRF");
-
-      const xsrfToken = getCookie("XSRF-TOKEN");
-      if (!xsrfToken) throw new Error("Token XSRF não encontrado");
-
-      // 2️⃣ Captura dados do formulário
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
       const email = String(formData.get("email") || "").trim();
-      const password = String(formData.get("password") || "");
+      const password = String(formData.get("password") || "").trim();
 
       if (!email || !password) {
-        setError("Preencha email e senha");
-        setLoading(false);
-        return;
+        throw new Error("Preencha email e senha");
       }
 
-      // 3️⃣ Requisição de login
-      const loginRes = await fetch("http://localhost:8000/login", {
+      // Faz o login no backend
+      const loginRes = await fetch(`${API_URL}/login`, {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
         },
         body: JSON.stringify({ email, password }),
       });
 
       if (!loginRes.ok) {
         const data = await loginRes.json().catch(() => ({}));
-        setError(
-          data.errors?.email?.[0] ||
-            data.message ||
+        throw new Error(
+          data.message ||
+            data.errors?.email?.[0] ||
             "Email ou senha inválidos"
         );
-        setLoading(false);
-        return;
       }
 
-      // 4️⃣ Login OK
-      const loginData = await loginRes.json();
-      console.log("Login sucesso:", loginData);
+      const { token, user } = await loginRes.json();
 
-      // 5️⃣ Confirma usuário autenticado
-      const meRes = await fetch("http://localhost:8000/api/user", {
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
+      // Salva no contexto (e automaticamente no localStorage)
+      login(token, user);
 
-      let userData: any = null;
-      if (meRes.ok) {
-        const meJson = await meRes.json();
-        // Certifique-se de acessar o campo correto
-        userData = meJson.data || meJson;
-        console.log("Usuário autenticado:", userData);
-      }
-
-      // 6️⃣ Redireciona para dashboard
+      // Redireciona para o dashboard
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro no login:", err);
-      setError("Erro de conexão com o servidor. Verifique se o backend está rodando.");
+      setError(err.message || "Erro ao fazer login. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -109,7 +76,7 @@ export default function LoginPage() {
             Ou{" "}
             <Link
               href="/register"
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-blue-600 hover:text-blue-500 transition"
             >
               crie uma conta nova
             </Link>
@@ -126,6 +93,7 @@ export default function LoginPage() {
               autoComplete="email"
               className="w-full"
             />
+
             <Input
               name="password"
               type="password"
@@ -137,7 +105,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-md bg-red-50 p-4 border border-red-200">
               <p className="text-sm text-red-800 text-center">{error}</p>
             </div>
           )}
@@ -145,7 +113,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4"
+            className="w-full flex justify-center py-3 px-4 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition"
           >
             {loading ? "Entrando..." : "Entrar"}
           </Button>
@@ -154,4 +122,3 @@ export default function LoginPage() {
     </main>
   );
 }
- 

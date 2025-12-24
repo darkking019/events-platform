@@ -10,7 +10,18 @@ class ApiAuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    private string $referer = 'http://localhost:8000';
+    /**
+     * Simula domínio frontend (Sanctum depende disso)
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'sanctum.stateful' => ['localhost', '127.0.0.1'],
+            'session.domain' => null,
+        ]);
+    }
 
     public function test_user_can_login_via_api(): void
     {
@@ -19,51 +30,72 @@ class ApiAuthTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $this->withHeader('referer', $this->referer)->get('/sanctum/csrf-cookie');
+        // CSRF
+        $this->get('/sanctum/csrf-cookie');
 
-        $response = $this->withHeader('referer', $this->referer)
-                         ->postJson('/api/login', [
+        // Login
+        $response = $this->postJson('/api/login', [
             'email' => 'test@example.com',
             'password' => 'password',
         ]);
 
-        $response->assertOk()
-                 ->assertJsonStructure([
-                     'message',
-                     'user' => ['id', 'name', 'email'],
-                 ]);
+        $response
+            ->assertOk()
+            ->assertJsonStructure([
+                'message',
+                'user' => ['id', 'name', 'email'],
+            ]);
 
+        $this->assertAuthenticated();
         $this->assertAuthenticatedAs($user);
     }
 
     public function test_user_cannot_login_with_invalid_credentials(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'password' => bcrypt('password'),
+        ]);
 
-        $this->withHeader('referer', $this->referer)->get('/sanctum/csrf-cookie');
+        $this->get('/sanctum/csrf-cookie');
 
-        $response = $this->withHeader('referer', $this->referer)
-                         ->postJson('/api/login', [
+        $response = $this->postJson('/api/login', [
             'email' => $user->email,
             'password' => 'wrong-password',
         ]);
 
-        $response->assertUnprocessable()
-                 ->assertJsonValidationErrors(['email']);
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
 
         $this->assertGuest();
     }
 
-   public function test_authenticated_user_can_logout_via_api(): void
-{
-    // ... login code ...
+    public function test_authenticated_user_can_logout_via_api(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password'),
+        ]);
 
-    $response = $this->withHeader('referer', 'http://localhost:8000')
-                     ->postJson('/api/logout');
+        // CSRF
+        $this->get('/sanctum/csrf-cookie');
 
-    $response->assertOk()
-             ->assertJson(['message' => 'Logout realizado com sucesso']);
+        // Login
+        $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk();
 
-    $this->assertGuest('sanctum');  // <-- aqui
-}
+        $this->assertAuthenticated();
+
+        // Logout
+        $response = $this->postJson('/api/logout');
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'message' => 'Logout realizado com sucesso',
+            ]);
+
+        $this->assertGuest();
+    }
 }

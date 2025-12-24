@@ -12,6 +12,13 @@ export default function EventPage() {
   const [event, setEvent] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+  fetch('https://events-platform-production-9928.up.railway.app/api/test')
+    .then(res => res.json())
+    .then(console.log)
+    .catch(console.error)
+}, [])
+
 
   useEffect(() => {
     async function load() {

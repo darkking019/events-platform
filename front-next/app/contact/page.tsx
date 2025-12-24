@@ -3,16 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function ContatosPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Tenta carregar o usuário logado (opcional – só pra mostrar nome se estiver logado)
+  // 🔹 Usuário logado (opcional)
   useEffect(() => {
     async function checkUser() {
       try {
-        const res = await fetch("http://localhost:8000/api/user", {
+        const res = await fetch(`${API_URL}/api/user`, {
           credentials: "include",
           headers: { Accept: "application/json" },
         });
@@ -21,8 +23,8 @@ export default function ContatosPage() {
           const userData = await res.json();
           setUser(userData);
         }
-      } catch (err) {
-        // Usuário não logado → tudo bem, página é pública
+      } catch {
+        // visitante → página pública
       } finally {
         setLoading(false);
       }
@@ -31,12 +33,13 @@ export default function ContatosPage() {
     checkUser();
   }, []);
 
+  // 🔹 Logout
   async function logout() {
-    await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+    await fetch(`${API_URL}/sanctum/csrf-cookie`, {
       credentials: "include",
     });
 
-    await fetch("http://localhost:8000/api/logout", {
+    await fetch(`${API_URL}/api/logout`, {
       method: "POST",
       credentials: "include",
     });
@@ -44,22 +47,24 @@ export default function ContatosPage() {
     router.push("/login");
   }
 
-  if (loading) return <p className="text-center mt-10">Carregando...</p>;
+  if (loading) {
+    return <p className="text-center mt-10">Carregando...</p>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      {/* Cabeçalho com saudação opcional e botão de sair (só se logado) */}
+      {/* Cabeçalho */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold">Contatos</h1>
-          {user && (
+
+          {user ? (
             <p className="mt-2 text-lg text-gray-600">
               Olá novamente, <strong>{user.name}</strong>!
             </p>
-          )}
-          {!user && (
+          ) : (
             <p className="mt-2 text-lg text-gray-600">
-              Página pública – você não precisa estar logado para ver isso.
+              Página pública – você não precisa estar logado.
             </p>
           )}
         </div>
@@ -74,69 +79,44 @@ export default function ContatosPage() {
         )}
       </div>
 
-      {/* Seção de informações de contato */}
+      {/* Cards */}
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {/* Card 1 - Email */}
+        {/* Email */}
         <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="ml-4 text-xl font-semibold">E-mail</h3>
-          </div>
+          <h3 className="text-xl font-semibold mb-2">E-mail</h3>
           <p className="text-gray-700">contato@meuevento.com</p>
-          <p className="text-sm text-gray-500 mt-2">Resposta em até 24 horas</p>
+          <p className="text-sm text-gray-500 mt-2">Resposta em até 24h</p>
         </div>
 
-        {/* Card 2 - Telefone/WhatsApp */}
+        {/* Telefone */}
         <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </div>
-            <h3 className="ml-4 text-xl font-semibold">Telefone / WhatsApp</h3>
-          </div>
+          <h3 className="text-xl font-semibold mb-2">Telefone / WhatsApp</h3>
           <p className="text-gray-700">(11) 98765-4321</p>
-          <p className="text-sm text-gray-500 mt-2">Segunda a sexta, 9h às 18h</p>
+          <p className="text-sm text-gray-500 mt-2">Seg–Sex • 9h às 18h</p>
         </div>
 
-        {/* Card 3 - Endereço */}
+        {/* Endereço */}
         <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
-          <div className="flex items-center mb-4">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h3 className="ml-4 text-xl font-semibold">Endereço</h3>
-          </div>
-          <p className="text-gray-700">Rua Exemplo, 123<br />São Paulo - SP<br />CEP: 01234-567</p>
+          <h3 className="text-xl font-semibold mb-2">Endereço</h3>
+          <p className="text-gray-700">
+            Rua Exemplo, 123<br />
+            São Paulo – SP<br />
+            CEP 01234-567
+          </p>
         </div>
       </div>
 
-      {/* Mensagem adicional */}
+      {/* Ações finais */}
       <div className="mt-12 text-center">
-        <p className="text-lg text-gray-700 max-w-3xl mx-auto">
-          Estamos aqui para ajudar com dúvidas sobre eventos, inscrições, suporte técnico ou qualquer outra questão.
-          Entre em contato pelo meio que preferir!
-        </p>
-
-        {user && (
+        {user ? (
           <button
             onClick={() => router.push("/dashboard")}
-            className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
           >
             Voltar para meus eventos
           </button>
-        )}
-
-        {!user && (
-          <div className="mt-8 space-x-4">
+        ) : (
+          <div className="space-x-4">
             <button
               onClick={() => router.push("/login")}
               className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"

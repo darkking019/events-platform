@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function CreateEventPage() {
   const router = useRouter();
 
@@ -30,17 +32,15 @@ export default function CreateEventPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch("http://localhost:8000/api/user", {
+        const res = await fetch(`${API_URL}/api/user`, {
           credentials: "include",
-          headers: {
-            Accept: "application/json",
-          },
+          headers: { Accept: "application/json" },
         });
 
         if (!res.ok) throw new Error("Não autenticado");
 
         const data = await res.json();
-        setUser(data.data);
+        setUser(data.data ?? data);
       } catch {
         router.push("/login");
       } finally {
@@ -50,50 +50,51 @@ export default function CreateEventPage() {
 
     checkAuth();
   }, [router]);
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const payment = params.get("payment");
 
-  if (!payment) return;
+  // ---------------------------
+  // Payment return
+  // ---------------------------
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
 
-  if (payment === "failure") {
-    alert("Pagamento falhou");
-    return;
-  }
+    if (!payment) return;
 
-  if (payment === "pending") {
-    alert("Pagamento pendente");
-    return;
-  }
-
-  if (payment === "success") {
-    const ref = localStorage.getItem("payment_ref");
-
-    if (!ref) {
-      alert("Referência de pagamento perdida");
+    if (payment === "failure") {
+      alert("Pagamento falhou");
       return;
     }
 
-    fetch(`http://localhost:8000/api/payments/confirm?ref=${ref}`, {
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Falha ao confirmar pagamento");
-        return res.json();
-      })
-      .then(() => {
-        localStorage.removeItem("payment_ref");
-        router.push("/events");
-      })
-      .catch(() => {
-        alert("Pagamento aprovado, mas erro ao confirmar.");
-      });
-  }
-}, [router]);
+    if (payment === "pending") {
+      alert("Pagamento pendente");
+      return;
+    }
 
+    if (payment === "success") {
+      const ref = localStorage.getItem("payment_ref");
+
+      if (!ref) {
+        alert("Referência de pagamento perdida");
+        return;
+      }
+
+      fetch(`${API_URL}/api/payments/confirm?ref=${ref}`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Falha ao confirmar pagamento");
+          return res.json();
+        })
+        .then(() => {
+          localStorage.removeItem("payment_ref");
+          router.push("/events");
+        })
+        .catch(() => {
+          alert("Pagamento aprovado, mas erro ao confirmar.");
+        });
+    }
+  }, [router]);
 
   // ---------------------------
   // Handlers
@@ -176,38 +177,17 @@ useEffect(() => {
         payload.append("image", formData.image);
       }
 
-      // -------- DEBUG --------
-      console.log("=== DEBUG SUBMIT EVENT ===");
-      console.log(
-        "API URL:",
-        "http://localhost:8000/api/events/create-payment"
-      );
-      console.log("Origin:", window.location.origin);
-      console.log("Cookies:", document.cookie);
-      console.log("Payload:", {
-        title: formData.title,
-        description: formData.description,
-        date: formData.date,
-        city: formData.city,
-        private: formData.is_public ? 0 : 1,
-        items: formData.items,
-        hasImage: !!formData.image,
-      });
-      // -----------------------
+      console.log("API URL:", `${API_URL}/api/events/create-payment`);
 
       const res = await fetch(
-        "http://localhost:8000/api/events/create-payment",
+        `${API_URL}/api/events/create-payment`,
         {
           method: "POST",
           credentials: "include",
-          headers: {
-            Accept: "application/json",
-          },
+          headers: { Accept: "application/json" },
           body: payload,
         }
       );
-
-      console.log("Response status:", res.status);
 
       if (!res.ok) {
         const text = await res.text();
@@ -217,14 +197,12 @@ useEffect(() => {
       }
 
       const data = await res.json();
-
       setPrice(data.price);
 
-      // redireciona para Mercado Pago
       window.location.href = data.init_point;
     } catch (err) {
       console.error("FETCH ERROR:", err);
-      alert("Erro de conexão. Veja o console.");
+      alert("Erro de conexão.");
     } finally {
       setSubmitting(false);
     }
@@ -246,6 +224,7 @@ useEffect(() => {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Título */}
         <div>
           <label className="block mb-1">Título do evento</label>
           <input
@@ -259,6 +238,7 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Cidade */}
         <div>
           <label className="block mb-1">Cidade</label>
           <input
@@ -272,6 +252,7 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Descrição */}
         <div>
           <label className="block mb-1">Descrição</label>
           <textarea
@@ -281,8 +262,12 @@ useEffect(() => {
             onChange={handleChange}
             className="w-full border px-3 py-2 rounded"
           />
+          {errors.description && (
+            <p className="text-red-600 text-sm">{errors.description}</p>
+          )}
         </div>
 
+        {/* Data */}
         <div>
           <label className="block mb-1">Data</label>
           <input
@@ -292,13 +277,18 @@ useEffect(() => {
             onChange={handleChange}
             className="w-full border px-3 py-2 rounded"
           />
+          {errors.date && (
+            <p className="text-red-600 text-sm">{errors.date}</p>
+          )}
         </div>
 
+        {/* Imagem */}
         <div>
           <label className="block mb-1">Imagem (opcional)</label>
           <input type="file" accept="image/*" onChange={handleImageChange} />
         </div>
 
+        {/* Público */}
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -309,6 +299,7 @@ useEffect(() => {
           Evento público?
         </label>
 
+        {/* Itens */}
         <div>
           <label className="block mb-1">Itens opcionais</label>
           <div className="flex gap-2">
@@ -326,6 +317,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* Ações */}
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -341,8 +333,9 @@ useEffect(() => {
             className="px-4 py-2 bg-green-600 text-white rounded"
           >
             Pagar R${" "}
-         {price != null && !isNaN(price) ? price.toFixed(2).replace(".", ",") : "--"}
-{" "}
+            {price != null && !isNaN(price)
+              ? price.toFixed(2).replace(".", ",")
+              : "--"}{" "}
             e criar
           </button>
         </div>

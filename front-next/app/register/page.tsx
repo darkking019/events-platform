@@ -7,11 +7,7 @@ import Link from "next/link";
 import Input from "@/app/components/ui/input";
 import Button from "@/app/components/ui/Button";
 
-function getCookie(name: string): string | undefined {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(";").shift();
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,76 +20,78 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const csrfRes = await fetch("http://localhost:8000/sanctum/csrf-cookie", {
+      // 1️⃣ CSRF (Sanctum)
+      const csrfRes = await fetch(`${API_URL}/sanctum/csrf-cookie`, {
         credentials: "include",
       });
 
-      if (!csrfRes.ok) throw new Error("Falha ao obter cookie CSRF");
+      if (!csrfRes.ok) {
+        throw new Error("Falha ao obter CSRF");
+      }
 
-      const xsrfToken = getCookie("XSRF-TOKEN");
-      if (!xsrfToken) throw new Error("Token XSRF não encontrado");
+      // 2️⃣ Form
+      const formData = new FormData(e.currentTarget);
 
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
       const name = String(formData.get("name") || "").trim();
       const email = String(formData.get("email") || "").trim();
       const password = String(formData.get("password") || "");
-      const password_confirmation = String(formData.get("password_confirmation") || "");
+      const password_confirmation = String(
+        formData.get("password_confirmation") || ""
+      );
 
       if (!name || !email || !password || !password_confirmation) {
-        setError("Preencha todos os campos");
-        setLoading(false);
-        return;
+        throw new Error("Preencha todos os campos");
       }
 
       if (password !== password_confirmation) {
-        setError("As senhas não coincidem");
-        setLoading(false);
-        return;
+        throw new Error("As senhas não coincidem");
       }
 
-      const registerRes = await fetch("http://localhost:8000/register", {
+      // 3️⃣ Register (Laravel já autentica aqui)
+      const registerRes = await fetch(`${API_URL}/register`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "X-XSRF-TOKEN": decodeURIComponent(xsrfToken),
         },
-        body: JSON.stringify({ name, email, password, password_confirmation }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          password_confirmation,
+        }),
       });
 
       if (!registerRes.ok) {
         const data = await registerRes.json().catch(() => ({}));
-        setError(
-          data.errors?.email?.[0] ||
+        throw new Error(
+          data.message ||
+            data.errors?.email?.[0] ||
             data.errors?.password?.[0] ||
-            data.message ||
             "Erro ao registrar"
         );
-        setLoading(false);
-        return;
       }
 
-      console.log("Registro sucesso");
-
-      const meRes = await fetch("http://localhost:8000/api/user", {
+      // 4️⃣ Confirma sessão
+      const meRes = await fetch(`${API_URL}/api/user`, {
         credentials: "include",
         headers: { Accept: "application/json" },
       });
 
-      if (meRes.ok) {
-        console.log("Usuário autenticado");
+      if (!meRes.ok) {
+        throw new Error("Usuário não autenticado após registro");
       }
 
+      // 5️⃣ Sucesso
       router.push("/dashboard");
-    } catch (err) {
-      setError("Erro de conexão com o servidor.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Erro ao registrar");
     } finally {
       setLoading(false);
     }
   }
-
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <section className="w-full max-w-md space-y-8">
