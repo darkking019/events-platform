@@ -1,6 +1,6 @@
 // components/EventsTable.tsx
 import Link from 'next/link';
-import Button from './ui/Button';
+import Button from '@/app/components/ui/button/Button';
 
 type Event = {
   id: number;

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import Input from "@/app/components/ui/input";
-import Button from "@/app/components/ui/Button";
+import Input from "@/app/components/ui/Input/input";
+import Button from "@/app/components/ui/button/Button";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -25,9 +25,7 @@ export default function RegisterPage() {
         credentials: "include",
       });
 
-      if (!csrfRes.ok) {
-        throw new Error("Falha ao obter CSRF");
-      }
+      if (!csrfRes.ok) throw new Error("Falha ao obter CSRF");
 
       // 2️⃣ Form
       const formData = new FormData(e.currentTarget);
@@ -35,17 +33,13 @@ export default function RegisterPage() {
       const name = String(formData.get("name") || "").trim();
       const email = String(formData.get("email") || "").trim();
       const password = String(formData.get("password") || "");
-      const password_confirmation = String(
-        formData.get("password_confirmation") || ""
-      );
+      const password_confirmation = String(formData.get("password_confirmation") || "");
 
-      if (!name || !email || !password || !password_confirmation) {
+      if (!name || !email || !password || !password_confirmation)
         throw new Error("Preencha todos os campos");
-      }
 
-      if (password !== password_confirmation) {
+      if (password !== password_confirmation)
         throw new Error("As senhas não coincidem");
-      }
 
       // 3️⃣ Register (Laravel já autentica aqui)
       const registerRes = await fetch(`${API_URL}/register`, {
@@ -55,21 +49,16 @@ export default function RegisterPage() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          password_confirmation,
-        }),
+        body: JSON.stringify({ name, email, password, password_confirmation }),
       });
 
       if (!registerRes.ok) {
         const data = await registerRes.json().catch(() => ({}));
         throw new Error(
           data.message ||
-            data.errors?.email?.[0] ||
-            data.errors?.password?.[0] ||
-            "Erro ao registrar"
+          data.errors?.email?.[0] ||
+          data.errors?.password?.[0] ||
+          "Erro ao registrar"
         );
       }
 
@@ -79,9 +68,7 @@ export default function RegisterPage() {
         headers: { Accept: "application/json" },
       });
 
-      if (!meRes.ok) {
-        throw new Error("Usuário não autenticado após registro");
-      }
+      if (!meRes.ok) throw new Error("Usuário não autenticado após registro");
 
       // 5️⃣ Sucesso
       router.push("/dashboard");
@@ -92,22 +79,57 @@ export default function RegisterPage() {
       setLoading(false);
     }
   }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <section className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Criar conta</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Ou <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">entre na sua conta</Link>
+            Ou{" "}
+            <Link
+              href="/login"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              entre na sua conta
+            </Link>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
-            <Input name="name" type="text" placeholder="Seu nome" required autoComplete="name" className="w-full" />
-            <Input name="email" type="email" placeholder="seu@email.com" required autoComplete="email" className="w-full" />
-            <Input name="password" type="password" placeholder="••••••••" required autoComplete="new-password" className="w-full" />
-            <Input name="password_confirmation" type="password" placeholder="Confirme a senha" required autoComplete="new-password" className="w-full" />
+            <Input
+              name="name"
+              type="text"
+              placeholder="Seu nome"
+              required
+              autoComplete="name"
+              className="w-full"
+            />
+            <Input
+              name="email"
+              type="email"
+              placeholder="seu@email.com"
+              required
+              autoComplete="email"
+              className="w-full"
+            />
+            <Input
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
+              className="w-full"
+            />
+            <Input
+              name="password_confirmation"
+              type="password"
+              placeholder="Confirme a senha"
+              required
+              autoComplete="new-password"
+              className="w-full"
+            />
           </div>
 
           {error && (
@@ -116,7 +138,11 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <Button type="submit" disabled={loading} className="w-full flex justify-center py-2 px-4">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4"
+          >
             {loading ? "Criando conta..." : "Criar conta"}
           </Button>
         </form>

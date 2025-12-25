@@ -1,7 +1,8 @@
 // app/auth/confirm-password/page.tsx
+'use client'
+import Button from '@/app/components/ui/button/Button';
 
-import Button from 'app/components/ui/Button';
-import Input from 'app/components/ui/input';// note: corrigido para maiúscula se for o padrão
+import Input from '@/app/components/ui/Input/input';// note: corrigido para maiúscula se for o padrão
 
 export default function ConfirmPasswordPage() {
   return (
