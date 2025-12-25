@@ -16,14 +16,14 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction \
  && mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache
 
+# 👇 ISSO É O QUE IMPORTA
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080
+
 RUN php artisan config:clear \
  && php artisan config:cache \
  && php artisan route:clear \
  && php artisan view:clear
 
 CMD sh -c "php-fpm -D && nginx -g 'daemon off;'"
-
-
