@@ -1,5 +1,6 @@
 FROM php:8.3-fpm-alpine
 
+# Instala Nginx + dependências PHP
 RUN apk add --no-cache \
     nginx \
     bash \
@@ -7,23 +8,32 @@ RUN apk add --no-cache \
     zip unzip git curl \
     && docker-php-ext-install pdo_mysql zip
 
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# App
 WORKDIR /var/www/html
 COPY . .
 
+# Dependências Laravel
 RUN composer install --no-dev --optimize-autoloader --no-interaction \
  && mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache
 
-# 👇 ISSO É O QUE IMPORTA
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 👉 nginx.conf PRINCIPAL
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+
+# 👉 server (default)
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080
 
+# Limpa caches Laravel
 RUN php artisan config:clear \
  && php artisan config:cache \
  && php artisan route:clear \
  && php artisan view:clear
 
+# Start PHP-FPM + Nginx
 CMD sh -c "php-fpm -D && nginx -g 'daemon off;'"
+
