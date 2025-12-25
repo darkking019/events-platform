@@ -2,13 +2,18 @@
 
 return [
 
-    'paths' => ['api/*', 'login', 'logout', 'sanctum/csrf-cookie'],
+    'paths' => [
+        'api/*',
+        'login',
+        'logout',
+        'sanctum/csrf-cookie',
+    ],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://events-platform-huqa0t1hl-darkking019s-projects.vercel.app' ,
-         'http://localhost:3000'
+        'https://events-platform-topaz.vercel.app',
+        'http://localhost:3000',
     ],
 
     'allowed_headers' => ['*'],
@@ -17,6 +22,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
-
+    'supports_credentials' => false,
 ];
