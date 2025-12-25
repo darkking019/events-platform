@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Button from "./components/ui/button";
+import Button from "../components/ui/button";
+
 
 export default function HomePage() {
   return (
@@ -15,7 +16,7 @@ export default function HomePage() {
           Você está logado com sucesso. A partir daqui você pode acessar
           seu painel, gerenciar dados e usar o sistema normalmente.
         </p>
-console.log(await res.json());
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
           <Link href="/dashboard">
             <Button className="px-8 py-3">
@@ -24,10 +25,7 @@ console.log(await res.json());
           </Link>
 
           <Link href="/profile">
-            <Button
-             
-              className="px-8 py-3"
-            >
+            <Button className="px-8 py-3">
               Meu Perfil
             </Button>
           </Link>

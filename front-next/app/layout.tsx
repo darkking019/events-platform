@@ -4,7 +4,7 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
-import { AuthProvider, useAuth} from 'app/context/AuthContext'
+import { AuthProvider, useAuth} from 'app/context/AuthContext';
 
 
 const inter = Inter({ subsets: ['latin'] });
