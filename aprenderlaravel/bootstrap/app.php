@@ -17,10 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
    ->withMiddleware(function (Middleware $middleware) {
 
     //  CORS global (sempre primeiro)
-    $middleware->prepend(\App\Http\Middleware\DynamicCors::class);
+   
 
-    //  Desabilita CSRF para APIs
-    $middleware->prepend(\App\Http\Middleware\DisableCsrfForApi::class);
+   
+  
 
     //  Alias padrão
     $middleware->alias([
