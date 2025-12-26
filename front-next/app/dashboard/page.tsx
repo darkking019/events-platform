@@ -3,19 +3,33 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<any | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
   useEffect(() => {
     async function load() {
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
         // 👤 usuário autenticado
-        const userRes = await fetch("/api/user", {
-          credentials: "include",
-          headers: { Accept: "application/json" },
+        const userRes = await fetch(`${API_URL}/api/user`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!userRes.ok) throw new Error("401");
@@ -24,16 +38,19 @@ export default function DashboardPage() {
         setUser(userData);
 
         // 📅 eventos do dashboard
-        const eventsRes = await fetch("/api/events", {
-          credentials: "include",
-          headers: { Accept: "application/json" },
+        const eventsRes = await fetch(`${API_URL}/api/events`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!eventsRes.ok) throw new Error("Erro ao carregar eventos");
 
         const eventsJson = await eventsRes.json();
-        setEvents(eventsJson.data ?? []); // 👈 importante
+        setEvents(eventsJson.data ?? []);
       } catch {
+        localStorage.removeItem("token");
         router.push("/login");
       } finally {
         setLoading(false);
@@ -41,18 +58,10 @@ export default function DashboardPage() {
     }
 
     load();
-  }, [router]);
+  }, [router, token]);
 
-  async function logout() {
-    await fetch("/sanctum/csrf-cookie", {
-      credentials: "include",
-    });
-
-    await fetch("/api/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-
+  function logout() {
+    localStorage.removeItem("token");
     router.push("/login");
   }
 

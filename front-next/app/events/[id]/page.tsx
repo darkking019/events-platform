@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
 export default function EventPage() {
   const router = useRouter();
   const params = useParams();
@@ -12,49 +14,73 @@ export default function EventPage() {
   const [event, setEvent] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-  fetch('https://events-platform-production-9928.up.railway.app/api/test')
-    .then(res => res.json())
-    .then(console.log)
-    .catch(console.error)
-}, [])
 
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
 
   useEffect(() => {
     async function load() {
-      try {
-        const userRes = await fetch("/api/user", {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-        });
-        if (!userRes.ok) throw new Error("Não autenticado");
-        const userData = await userRes.json();
-        setUser(userData.data);
+      if (!token) {
+        router.push("/login");
+        return;
+      }
 
-        const eventRes = await fetch(`/api/events/event/${eventId}`, {
-          credentials: "include",
-          headers: { Accept: "application/json" },
+      try {
+        // 👤 usuário autenticado
+        const userRes = await fetch(`${API_URL}/api/user`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
+
+        if (!userRes.ok) throw new Error("Não autenticado");
+
+        const userData = await userRes.json();
+        setUser(userData);
+
+        // 📅 evento
+        const eventRes = await fetch(
+          `${API_URL}/api/events/event/${eventId}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         if (!eventRes.ok) throw new Error("Evento não encontrado");
+
         const eventData = await eventRes.json();
 
-        // Força items como array e adiciona image_url (caso venha do backend)
-        const eventWithItems = {
+        setEvent({
           ...eventData.data,
-          items: Array.isArray(eventData.data.items) ? eventData.data.items : [],
-        };
-        setEvent(eventWithItems);
-
-        const participantsRes = await fetch(`/api/events/event/${eventId}/participants`, {
-          credentials: "include",
-          headers: { Accept: "application/json" },
+          items: Array.isArray(eventData.data.items)
+            ? eventData.data.items
+            : [],
         });
+
+        // 👥 participantes
+        const participantsRes = await fetch(
+          `${API_URL}/api/events/event/${eventId}/participants`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         if (participantsRes.ok) {
           const participantsData = await participantsRes.json();
-          setParticipants(participantsData.data || []);
+          setParticipants(participantsData.data ?? []);
         }
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
+        console.error(err);
+        localStorage.removeItem("token");
         router.push("/login");
       } finally {
         setLoading(false);
@@ -62,36 +88,53 @@ export default function EventPage() {
     }
 
     if (eventId) load();
-  }, [eventId, router]);
+  }, [eventId, router, token]);
 
   async function handleDelete() {
     if (!confirm("Tem certeza que deseja excluir este evento?")) return;
 
     try {
-      await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+      const res = await fetch(
+        `${API_URL}/api/events/event/${eventId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      const res = await fetch(`/api/events/event/${eventId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-
-      if (res.ok) router.push("/dashboard");
-      else alert("Erro ao excluir evento.");
+      if (res.ok) {
+        router.push("/dashboard");
+      } else {
+        alert("Erro ao excluir evento.");
+      }
     } catch (err) {
       console.error(err);
       alert("Erro de conexão.");
     }
   }
 
-  if (loading) return <p className="text-center mt-10 text-lg">Carregando evento...</p>;
-  if (!event) return <p className="text-center mt-10 text-lg">Evento não encontrado.</p>;
+  if (loading)
+    return (
+      <p className="text-center mt-10 text-lg">
+        Carregando evento...
+      </p>
+    );
+
+  if (!event)
+    return (
+      <p className="text-center mt-10 text-lg">
+        Evento não encontrado.
+      </p>
+    );
 
   const isOwner = user?.id === event.user_id;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Banner com imagem do evento */}
+      {/* Banner */}
       <div className="mb-10">
         {event.image_url ? (
           <img
@@ -100,42 +143,36 @@ export default function EventPage() {
             className="w-full h-64 md:h-96 object-cover rounded-2xl shadow-2xl"
           />
         ) : (
-          <div className="w-full h-64 md:h-96 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center shadow-xl">
-            <span className="text-gray-500 text-xl font-medium">Sem imagem de capa</span>
+          <div className="w-full h-64 md:h-96 bg-gray-200 rounded-2xl flex items-center justify-center">
+            <span className="text-gray-500 text-xl">
+              Sem imagem de capa
+            </span>
           </div>
         )}
       </div>
 
       {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10">
+      <div className="flex justify-between mb-10">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">{event.title}</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-4xl font-bold">{event.title}</h1>
+          <p className="text-gray-600 mt-2">
             {event.private ? "Evento privado" : "Evento público"}
-          </p>
-          <p className="text-gray-500 mt-1">
-            {new Date(event.date).toLocaleString("pt-BR", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
           </p>
         </div>
 
         {isOwner && (
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex gap-4">
             <button
-              onClick={() => router.push(`/events/${eventId}/edit`)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              onClick={() =>
+                router.push(`/events/${eventId}/edit`)
+              }
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg"
             >
-              Editar evento
+              Editar
             </button>
             <button
               onClick={handleDelete}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              className="px-6 py-3 bg-red-600 text-white rounded-lg"
             >
               Excluir
             </button>
@@ -143,62 +180,29 @@ export default function EventPage() {
         )}
       </div>
 
-      {/* Detalhes do evento */}
-      <div className="border rounded-2xl p-8 mb-10 bg-white shadow-lg space-y-6">
-        <div>
-          <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Descrição</p>
-          <p className="text-lg mt-2 whitespace-pre-line">{event.description || "Sem descrição"}</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Data e Hora</p>
-            <p className="text-lg mt-2">
-              {new Date(event.date).toLocaleDateString("pt-BR", { dateStyle: "long" })}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Cidade</p>
-            <p className="text-lg mt-2">{event.city}</p>
-          </div>
-        </div>
-
-        {event.items?.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Itens sugeridos</p>
-            <ul className="list-disc list-inside text-lg space-y-1 pl-4">
-              {event.items.map((item: string, i: number) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
       {/* Participantes */}
-      <div className="border rounded-2xl p-8 bg-white shadow-lg">
-        <h2 className="text-2xl font-bold mb-6">Participantes ({participants.length})</h2>
-        {participants.length > 0 ? (
-          <ul className="space-y-4">
-            {participants.map((p: any, i: number) => (
-              <li key={p.id} className="flex items-center gap-3">
-                <span className="bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center text-sm font-medium">
-                  {i + 1}
-                </span>
-                <span className="text-lg">{p.name}</span>
-              </li>
+      <div className="border rounded-xl p-6 bg-white">
+        <h2 className="text-2xl font-bold mb-4">
+          Participantes ({participants.length})
+        </h2>
+
+        {participants.length ? (
+          <ul className="space-y-2">
+            {participants.map((p: any) => (
+              <li key={p.id}>{p.name}</li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">Nenhum participante ainda. Seja o primeiro!</p>
+          <p className="text-gray-500">
+            Nenhum participante ainda.
+          </p>
         )}
       </div>
 
-      {/* Botão voltar */}
-      <div className="mt-12 text-center">
+      <div className="mt-10 text-center">
         <button
           onClick={() => router.push("/dashboard")}
-          className="px-10 py-4 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition-colors font-medium text-lg shadow-md"
+          className="px-8 py-3 bg-gray-800 text-white rounded-lg"
         >
           ← Voltar para o dashboard
         </button>
