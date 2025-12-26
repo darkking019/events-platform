@@ -11,11 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
-    use HasFactory;
-    use HasProfilePhoto;
-    use Notifiable;
-    use TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasProfilePhoto, Notifiable, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -34,13 +30,10 @@ class User extends Authenticatable
         'profile_photo_url',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
     /**
      * Eventos criados pelo usuário
@@ -58,5 +51,17 @@ class User extends Authenticatable
         return $this->belongsToMany(Event::class, 'event_user', 'user_id', 'event_id')
                     ->withTimestamps()
                     ->orderBy('date', 'desc');
+    }
+
+    /**
+     * Gera um token pessoal para o usuário
+     * 
+     * @param string $name Nome do token
+     * @param array $abilities Permissões do token
+     * @return string Token em plain text
+     */
+    public function createBearerToken(string $name = 'app-token', array $abilities = ['*']): string
+    {
+        return $this->createToken($name, $abilities)->plainTextToken;
     }
 }
