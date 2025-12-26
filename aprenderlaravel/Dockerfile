@@ -29,10 +29,8 @@ COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
 
 # Limpa caches Laravel
-RUN php artisan config:clear \
- && php artisan config:cache \
- && php artisan route:clear \
- && php artisan view:clear
+RUN php artisan optimize:clear || true
+
 
 # Start PHP-FPM + Nginx
 CMD sh -c "php-fpm -D && nginx -g 'daemon off;'"
