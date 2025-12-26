@@ -30,26 +30,43 @@ export default function CreateEventPage() {
   // Auth
   // ---------------------------
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch(`${API_URL}/api/user`, {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-        });
+  async function checkAuth() {
+    const token = localStorage.getItem("token");
 
-        if (!res.ok) throw new Error("Não autenticado");
-
-        const data = await res.json();
-        setUser(data.data ?? data);
-      } catch {
-        router.push("/login");
-      } finally {
-        setLoading(false);
-      }
+    if (!token) {
+      router.push("/login");
+      return;
     }
 
-    checkAuth();
-  }, [router]);
+    try {
+      const res = await fetch(`${API_URL}/api/user`, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error("Erro ao buscar usuário");
+      }
+
+      const data = await res.json();
+      setUser(data.data ?? data);
+    } catch {
+      router.push("/login");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  checkAuth();
+}, [router]);
 
   // ---------------------------
   // Payment return

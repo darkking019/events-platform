@@ -1,30 +1,53 @@
-// app/me/page.tsx
+"use client";
 
-import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getUser() {
-  const res = await fetch(`${API_URL}/api/user`, {
-    credentials: "include", // essencial pro Sanctum
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store", // 👈 MUITO IMPORTANTE em Server Component
-  });
+export default function MePage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!res.ok) {
-    return null;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    async function loadUser() {
+      try {
+        const res = await fetch(`${API_URL}/api/user`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+        setUser(data);
+      } catch {
+        localStorage.removeItem("token");
+        router.push("/login");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUser();
+  }, [router]);
+
+  if (loading) {
+    return <p className="p-8">Carregando...</p>;
   }
 
-  return res.json();
-}
-
-export default async function MePage() {
-  const user = await getUser();
-
   if (!user) {
-    redirect("/login");
+    return null;
   }
 
   return (

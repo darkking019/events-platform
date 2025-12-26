@@ -10,6 +10,8 @@ type User = {
   created_at?: string;
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -19,12 +21,23 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function load() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       try {
-        const res = await fetch("/api/user", {
-          credentials: "include",
+        const res = await fetch(`${API_URL}/api/user`, {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (res.status === 401) {
+          localStorage.removeItem("token");
           router.push("/login");
           return;
         }
@@ -35,7 +48,7 @@ export default function ProfilePage() {
 
         const data = await res.json();
         setUser(data);
-      } catch (err) {
+      } catch {
         setError("Não foi possível carregar seu perfil.");
       } finally {
         setLoading(false);
@@ -65,9 +78,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
