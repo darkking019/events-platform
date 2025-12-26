@@ -14,15 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-   ->withMiddleware(function (Middleware $middleware) {
+ ->withMiddleware(function (Middleware $middleware) {
+    
+    $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
 
-    // API PURA — SEM COOKIE, SEM CSRF
+    
     $middleware->group('api', [
-        'throttle:api',
+        \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ]);
 
-    // Web continua web
     $middleware->group('web', [
         \Illuminate\Cookie\Middleware\EncryptCookies::class,
         \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
