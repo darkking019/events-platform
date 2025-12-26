@@ -72,46 +72,57 @@ export default function CreateEventPage() {
   // Payment return
   // ---------------------------
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const payment = params.get("payment");
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get("payment");
 
-    if (!payment) return;
+  if (!payment) return;
 
-    if (payment === "failure") {
-      alert("Pagamento falhou");
+  if (payment === "failure") {
+    alert("Pagamento falhou");
+    return;
+  }
+
+  if (payment === "pending") {
+    alert("Pagamento pendente");
+    return;
+  }
+
+  if (payment === "success") {
+    const ref = localStorage.getItem("payment_ref");
+    const token = localStorage.getItem("token"); // pega token do usuário
+
+    if (!ref) {
+      alert("Referência de pagamento perdida");
       return;
     }
 
-    if (payment === "pending") {
-      alert("Pagamento pendente");
+    if (!token) {
+      alert("Usuário não autenticado");
+      router.push("/login");
       return;
     }
 
-    if (payment === "success") {
-      const ref = localStorage.getItem("payment_ref");
-
-      if (!ref) {
-        alert("Referência de pagamento perdida");
-        return;
-      }
-
-      fetch(`${API_URL}/api/payments/confirm?ref=${ref}`, {
-        credentials: "include",
-        headers: { Accept: "application/json" },
+    fetch(`${API_URL}/api/payments/confirm?ref=${ref}`, {
+      method: "GET", // ou POST, depende da sua rota
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`, // Bearer token
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Falha ao confirmar pagamento");
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error("Falha ao confirmar pagamento");
-          return res.json();
-        })
-        .then(() => {
-          localStorage.removeItem("payment_ref");
-          router.push("/events");
-        })
-        .catch(() => {
-          alert("Pagamento aprovado, mas erro ao confirmar.");
-        });
-    }
-  }, [router]);
+      .then(() => {
+        localStorage.removeItem("payment_ref");
+        router.push("/events");
+      })
+      .catch(() => {
+        alert("Pagamento aprovado, mas erro ao confirmar.");
+      });
+  }
+}, [router]);
+
 
   // ---------------------------
   // Handlers
