@@ -2,9 +2,8 @@
 
 return [
 
-    'paths' => [
-        'a*',
-    ],
+ 'paths' => ['*'],
+
 
     'allowed_methods' => ['*'],
 
