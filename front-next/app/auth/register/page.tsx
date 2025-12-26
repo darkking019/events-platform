@@ -18,28 +18,33 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    const form = new FormData(e.currentTarget);
+
+    const payload = {
+      name: form.get("name"),
+      email: form.get("email"),
+      password: form.get("password"),
+      password_confirmation: form.get("password_confirmation"),
+    };
 
     try {
-      // 1️⃣ CSRF Sanctum
-      await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-        credentials: "include",
-      });
-
-      // 2️⃣ Register
       const res = await fetch(`${API_URL}/api/register`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          Accept: "application/json",
+          "Accept": "application/json",
+          "Content-Type": "application/json",
         },
-        body: formData,
+        body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(data?.message || "Erro ao criar conta");
       }
+
+      // se o backend retornar token futuramente:
+      // localStorage.setItem("token", data.token);
 
       router.push("/dashboard");
     } catch (err: any) {
@@ -77,3 +82,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

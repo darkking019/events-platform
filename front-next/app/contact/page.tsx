@@ -10,40 +10,46 @@ export default function ContatosPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Usuário logado (opcional)
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null;
+
+  // 🔹 Usuário logado (opcional, stateless)
   useEffect(() => {
     async function checkUser() {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetch(`${API_URL}/api/user`, {
-          credentials: "include",
-          headers: { Accept: "application/json" },
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+        } else {
+          localStorage.removeItem("token");
         }
       } catch {
-        // visitante → página pública
+        localStorage.removeItem("token");
       } finally {
         setLoading(false);
       }
     }
 
     checkUser();
-  }, []);
+  }, [token]);
 
-  // 🔹 Logout
-  async function logout() {
-    await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-      credentials: "include",
-    });
-
-    await fetch(`${API_URL}/api/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-
+  // 🔹 Logout (client-side)
+  function logout() {
+    localStorage.removeItem("token");
     router.push("/login");
   }
 
@@ -81,27 +87,23 @@ export default function ContatosPage() {
 
       {/* Cards */}
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {/* Email */}
-        <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
+        <div className="border rounded-lg p-6 bg-white shadow-sm">
           <h3 className="text-xl font-semibold mb-2">E-mail</h3>
           <p className="text-gray-700">contato@meuevento.com</p>
-          <p className="text-sm text-gray-500 mt-2">Resposta em até 24h</p>
         </div>
 
-        {/* Telefone */}
-        <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
-          <h3 className="text-xl font-semibold mb-2">Telefone / WhatsApp</h3>
+        <div className="border rounded-lg p-6 bg-white shadow-sm">
+          <h3 className="text-xl font-semibold mb-2">
+            Telefone / WhatsApp
+          </h3>
           <p className="text-gray-700">(11) 98765-4321</p>
-          <p className="text-sm text-gray-500 mt-2">Seg–Sex • 9h às 18h</p>
         </div>
 
-        {/* Endereço */}
-        <div className="border rounded-lg p-6 bg-white shadow-sm hover:shadow-md transition">
+        <div className="border rounded-lg p-6 bg-white shadow-sm">
           <h3 className="text-xl font-semibold mb-2">Endereço</h3>
           <p className="text-gray-700">
             Rua Exemplo, 123<br />
-            São Paulo – SP<br />
-            CEP 01234-567
+            São Paulo – SP
           </p>
         </div>
       </div>
