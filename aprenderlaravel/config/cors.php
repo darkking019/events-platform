@@ -9,7 +9,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://events-platform-topaz.vercel.app',
+        'https://events-platform-lrvz2r1ee-darkking019s-projects.vercel.app',
         'http://localhost:3000',
     ],
 
@@ -17,8 +17,8 @@ return [
 
     'exposed_headers' => ['Authorization'],
 
-
     'max_age' => 0,
 
     'supports_credentials' => false,
 ];
+
