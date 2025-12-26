@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
 
 class LoginController extends Controller
 {
@@ -13,33 +16,31 @@ class LoginController extends Controller
      * Realiza o login e retorna um token API
      */
     public function store(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+{
+    $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['Credenciais inválidas.'],
         ]);
-
-        if (! Auth::attempt($credentials)) {
-            throw ValidationException::withMessages([
-                'email' => ['As credenciais fornecidas estão incorretas.'],
-            ]);
-        }
-
-        // Usuário autenticado com sucesso
-        $user = Auth::user();
-
-        // Revoga tokens antigos (opcional, mas recomendado para segurança)
-        $user->tokens()->delete();
-
-        // Cria um novo token (pode dar um nome mais descritivo se quiser)
-        $token = $user->createToken('events-platform-token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login realizado com sucesso',
-            'user' => $user,
-            'token' => $token,               // ← Token que o frontend vai guardar
-        ], 200);
     }
+
+    // Revoga tokens antigos
+    $user->tokens()->delete();
+
+    // Cria token
+    $token = $user->createToken('events-platform')->plainTextToken;
+
+    return response()->json([
+        'user' => $user,
+        'token' => $token,
+    ]);
+}
 
     /**
      * Logout - revoga o token atual
